@@ -1,1 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Malla Interactiva - Contador Auditor</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .malla {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .semestre {
+      border: 1px solid #ccc;
+      background: white;
+      padding: 10px;
+      margin: 10px;
+      width: 250px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .semestre h2 {
+      font-size: 16px;
+      text-align: center;
+    }
+    .ramo {
+      background-color: pink;
+      border: 1px solid #999;
+      margin: 5px 0;
+      padding: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      position: relative;
+    }
+    .ramo.bloqueado {
+      background-color: #ddd;
+      cursor: not-allowed;
+    }
+    .ramo.aprobado {
+      background-color: #a259ff;
+      color: white;
+      text-decoration: line-through;
+    }
+    .codigo {
+      font-weight: bold;
+      display: block;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Malla Interactiva - Contador Auditor</h1>
+  <div class="malla" id="contenedor-malla"></div>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const datos = [
+      { semestre: 1, cod: "CAU001", nombre: "Inglés Nivel 1", prer: [] },
+      { semestre: 1, cod: "CAU003", nombre: "Matemática", prer: [] },
+      { semestre: 1, cod: "CAU004", nombre: "Administración", prer: [] },
+      { semestre: 1, cod: "CAU005", nombre: "Contabilidad I", prer: [] },
+      { semestre: 1, cod: "CAU006", nombre: "Taller de Habilidades Comunicativas", prer: [] },
+
+      { semestre: 2, cod: "CAU007", nombre: "Inglés Nivel 2", prer: ["CAU001"] },
+      { semestre: 2, cod: "CAU008", nombre: "Estadística I", prer: ["CAU003"] },
+      { semestre: 2, cod: "CAU009", nombre: "Economía", prer: [] },
+      { semestre: 2, cod: "CAU010", nombre: "Contabilidad II", prer: ["CAU005"] },
+      { semestre: 2, cod: "CAU011", nombre: "Taller de Desarrollo Personal", prer: [] },
+
+      { semestre: 3, cod: "CAU012", nombre: "Inglés Nivel 3", prer: ["CAU007"] },
+      { semestre: 3, cod: "CAU013", nombre: "Estadística II", prer: ["CAU008"] },
+      { semestre: 3, cod: "CAU014", nombre: "Microeconomía", prer: ["CAU009"] },
+      { semestre: 3, cod: "CAU015", nombre: "Costos I", prer: ["CAU010"] },
+      { semestre: 3, cod: "CAU016", nombre: "Legislación Empresarial", prer: [] },
+
+      { semestre: 4, cod: "CAU017", nombre: "Inglés Nivel 4", prer: ["CAU012"] },
+      { semestre: 4, cod: "CAU018", nombre: "Macroeconomía", prer: ["CAU014"] },
+      { semestre: 4, cod: "CAU019", nombre: "Costos II", prer: ["CAU015"] },
+      { semestre: 4, cod: "CAU020", nombre: "Derecho Laboral y Seguridad Social", prer: ["CAU016"] },
+      { semestre: 4, cod: "CAU021", nombre: "Contabilidad III", prer: ["CAU010"] },
+
+      { semestre: 5, cod: "CAU022", nombre: "Renta I", prer: ["CAU021"] },
+      { semestre: 5, cod: "CAU023", nombre: "Auditoría I", prer: ["CAU021"] },
+      { semestre: 5, cod: "CAU024", nombre: "Control de Gestión", prer: ["CAU019"] },
+      { semestre: 5, cod: "CAU025", nombre: "Finanzas", prer: ["CAU013"] },
+      { semestre: 5, cod: "CAU026", nombre: "Ética Profesional", prer: [] },
+
+      { semestre: 6, cod: "CAU027", nombre: "Renta II", prer: ["CAU022"] },
+      { semestre: 6, cod: "CAU028", nombre: "Auditoría II", prer: ["CAU023"] },
+      { semestre: 6, cod: "CAU029", nombre: "Control Interno", prer: ["CAU024"] },
+      { semestre: 6, cod: "CAU030", nombre: "Evaluación de Proyectos", prer: ["CAU025"] },
+      { semestre: 6, cod: "CAU031", nombre: "Contabilidad de Sociedades", prer: ["CAU021"] },
+
+      { semestre: 7, cod: "CAU032", nombre: "Tributación Empresarial", prer: ["CAU027"] },
+      { semestre: 7, cod: "CAU033", nombre: "Auditoría Tributaria", prer: ["CAU028"] },
+      { semestre: 7, cod: "CAU034", nombre: "NIIF", prer: ["CAU031"] },
+      { semestre: 7, cod: "CAU035", nombre: "Gestión de Personas", prer: [] },
+      { semestre: 7, cod: "CAU036", nombre: "Electivo Profesional I", prer: [] },
+
+      { semestre: 8, cod: "CAU037", nombre: "Contabilidad Gubernamental", prer: ["CAU034"] },
+      { semestre: 8, cod: "CAU038", nombre: "Auditoría Gubernamental", prer: ["CAU033"] },
+      { semestre: 8, cod: "CAU039", nombre: "Gestión Estratégica", prer: [] },
+      { semestre: 8, cod: "CAU040", nombre: "Electivo Profesional II", prer: [] },
+      { semestre: 8, cod: "CAU041", nombre: "Taller de Preparación Profesional", prer: [] },
+
+      { semestre: 9, cod: "CAU042", nombre: "Seminario de Título I", prer: ["CAU041"] },
+      { semestre: 10, cod: "CAU043", nombre: "Seminario de Título II", prer: ["CAU042"] }
+    ];
+
+    const estado = JSON.parse(localStorage.getItem("estadoRamos")) || {};
+    const contenedor = document.getElementById("contenedor-malla");
+
+    for (let s = 1; s <= 10; s++) {
+      const divSemestre = document.createElement("div");
+      divSemestre.className = "semestre";
+      divSemestre.innerHTML = `<h2>${s}° Semestre</h2>`;
+
+      datos.filter(d => d.semestre === s).forEach(r => {
+        const div = document.createElement("div");
+        div.className = "ramo";
+        div.id = r.cod;
+        div.dataset.prerrequisitos = r.prer.join(",");
+        div.innerHTML = `<span class="codigo">${r.cod}</span><span class="nombre">${r.nombre}</span>`;
+        divSemestre.appendChild(div);
+      });
+
+      contenedor.appendChild(divSemestre);
+    }
+
+    function actualizarEstados() {
+      document.querySelectorAll(".ramo").forEach(ramo => {
+        const id = ramo.id;
+        const aprobado = estado[id];
+        const prer = ramo.dataset.prerrequisitos.split(',').filter(Boolean);
+        const cumplidos = prer.every(p => estado[p]);
+
+        ramo.classList.remove("aprobado", "bloqueado");
+
+        if (!cumplidos && prer.length > 0) {
+          ramo.classList.add("bloqueado");
+        } else if (aprobado) {
+          ramo.classList.add("aprobado");
+        }
+      });
+    }
+
+    document.querySelectorAll(".ramo").forEach(ramo => {
+      ramo.addEventListener("click", () => {
+        if (ramo.classList.contains("bloqueado")) return;
+        const id = ramo.id;
+        estado[id] = !estado[id];
+        localStorage.setItem("estadoRamos", JSON.stringify(estado));
+        actualizarEstados();
+        dibujarLineas();
+      });
+    });
+
+    function dibujarLineas() {
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = document.body.scrollWidth;
+      canvas.height = document.body.scrollHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#555";
+      ctx.lineWidth = 2;
+
+      document.querySelectorAll(".ramo").forEach(ramo => {
+        const rect1 = ramo.getBoundingClientRect();
+        const prer = ramo.dataset.prerrequisitos.split(',').filter(Boolean);
+        prer.forEach(pr => {
+          const origen = document.getElementById(pr);
+          if (origen) {
+            const rect2 = origen.getBoundingClientRect();
+            ctx.beginPath();
+            ctx.moveTo(rect2.left + rect2.width / 2, rect2.bottom + window.scrollY);
+            ctx.lineTo(rect1.left + rect1.width / 2, rect1.top + window.scrollY);
+            ctx.stroke();
+          }
+        });
+      });
+    }
+
+    window.addEventListener("load", () => {
+      actualizarEstados();
+      dibujarLineas();
+    });
+    window.addEventListener("resize", dibujarLineas);
+  </script>
+</body>
+</html>
 
